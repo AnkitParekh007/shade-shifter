@@ -1,0 +1,32 @@
+stage,gate,item,recommended_spec,qty,indicative_inr,notes
+bench,0,USB power bank,5V certified 5000mAh or existing,1,0-1000,Use existing unit if available
+bench,0,ESP32 development board,ESP32 DevKit V1 or ESP32-S3 DevKit,1,550-1100,USB powered for all early tests
+bench,0,Addressable RGB strip,WS2812B 5V 60 LED/m IP30 1m,1,450-900,Use only 20-30 LEDs initially
+bench,0,Logic-level shifter,74AHCT125 breakout,1,150-350,Required for reliable 3.3V to 5V data
+bench,0,Capacitor,1000uF 10V electrolytic,2,40-100,Across LED 5V and ground
+bench,0,Resistor,330 ohm 0.25W,10,20-50,One in series with LED data
+bench,0,Breadboard,830-point,1,200-400,
+bench,0,Jumper wires,M-M M-F assortment,1,200-400,
+bench,0,USB data cable,Matching ESP32 connector,1,150-400,Must support data
+bench,0,Inline USB power meter,5V voltage/current display,1,500-1000,Strongly recommended
+bench,0,Digital multimeter,CAT-rated basic meter,1,700-1800,Do not buy the cheapest unprotected meter
+bench,0,Safety glasses,Clear impact-resistant,1,150-500,
+assembly,2,Soldering iron,Temperature controlled 60W,1,1200-2500,Skip if using a makerspace
+assembly,2,Solder,Lead-free 0.6-0.8mm,1,250-600,Use ventilation
+assembly,2,Heat-shrink kit,2:1 assorted diameters,1,200-500,
+assembly,2,Flexible wire,30AWG silicone red black white,3m,300-650,
+fit,3,Cheap fashion frame,Large rectangle 55-18-145 approx,1,300-800,Measure before CAD print
+fit,3,Digital caliper,0-150mm 0.01mm display,1,600-1300,Can borrow
+fit,3,PLA fit-check print,Front and two temples low infill,1,700-1600,No electronics worn
+wearable,4,COB RGB LED strip,5V narrow individually addressable if available,1m,900-2500,Purchase only after bench brightness test
+wearable,4,Diffuser,Milky translucent TPU or SLA resin,1,400-1200,Quote as separate parts
+wearable,4,PA12 nylon print,SLS/MJF front temples and pods,1,3500-8000,Only after fit-check acceptance
+wearable,4,Microcontroller module,Seeed XIAO ESP32-C3 or equivalent,1,700-1300,Compact BLE module
+wearable,4,Battery,Protected 3.7V LiPo 500-800mAh documented cell,1,800-1800,Must include protection and traceable datasheet
+wearable,4,Charger/power board,Load sharing charger plus regulated 5V boost,1,600-1600,Do not use TP4056 alone while operating
+wearable,4,Resettable fuse,Polyfuse 0.75-1A selected after current test,2,100-300,
+wearable,4,Slide switch,Rated at measured DC current,2,100-300,
+wearable,4,Micro connectors,JST-SH locking 2/3 pin prewired,6,500-1000,
+wearable,4,Temperature labels,40-50C irreversible strips,1,500-1200,For enclosure thermal test
+wearable,4,Silicone conformal coating,Electronics grade skin-isolated,1,500-1000,Not a substitute for sealed enclosure
+
