@@ -57,7 +57,7 @@ This document lists the tools needed to build and validate the Shade Shifter pro
 ## Optical and material test tools
 
 | Priority | Tool | Minimum specification | Indicative cost | Purpose |
-|---|---|---:|---|
+|---|---|---|---:|---|
 | P0 | Standardized color/grey card | Matte, stable reference | ₹1,000–₹5,000 | Repeatable photo comparisons |
 | P0 | Lux meter | 0–100,000 lux minimum | ₹1,500–₹8,000 | Indoor/daylight test records |
 | P1 | Colorimeter or spectrophotometer | CIE L*a*b*, ΔE reporting | ₹25,000–₹2,00,000 | Objective color quality and aging |
