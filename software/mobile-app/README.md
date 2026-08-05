@@ -1,26 +1,24 @@
-# Shade Shifter mobile app
+# Shade Shifter Mobile
 
-Flutter application for Android and iOS. The app is guest-first and simulator-first: the presentation and business logic depend only on `FrameTransport`, allowing the simulator to be replaced by the ESP32 BLE implementation without changing screens or controllers.
+Flutter companion app for Android and iOS. It is simulator-first, guest-first, local-only, and capability-aware.
 
-## Current foundation
+## Quick start
 
-- Premium light and dark themes
-- Guest onboarding
-- Simulator connection lifecycle
-- Whole-frame, front and temple zone selection
-- Persistent independent zone colors
-- Safe intensity cap
-- Live frame preview
-- Battery, temperature, firmware and acknowledgement status
-- Transport abstraction ready for BLE
-
-## Development
-
-```shell
+```text
 flutter pub get
 flutter analyze
 flutter test
 flutter run
 ```
 
-Android/iOS platform generation, BLE implementation, presets, gradients, effects and complete release documentation are tracked as subsequent implementation slices.
+Choose **Try simulator** to use the entire app without hardware. Choose **Pair physical frame** for the ESP32 Rev A device. Rev A accepts only a whole-frame solid RGB value; unsupported controls are disabled rather than emulated.
+
+## Structure
+
+- `lib/src/core`: domain models and design system
+- `lib/src/device`: transport contract, simulator, BLE, protocol, and studio state
+- `lib/src/looks`: Drift/SQLite saved looks
+- `lib/src/preview`: native GLB renderer and 2D fallback
+- `documentation/mobile-app`: architecture, BLE, setup, testing, release, safety/privacy, accessibility, and troubleshooting
+
+Android development requires API 24+. iOS builds require macOS/Xcode. The bundled GLB is a labeled proof-of-concept derived from project CAD, not production eyewear geometry. See the repository mobile documentation before hardware testing.
