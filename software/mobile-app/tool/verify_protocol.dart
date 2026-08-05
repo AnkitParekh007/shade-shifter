@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import '../lib/src/device/protocol/shade_protocol.dart';
+import 'package:shade_shifter/src/device/protocol/shade_protocol.dart';
 
 void main() {
   final payload = Uint8List.fromList([

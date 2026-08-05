@@ -26,9 +26,9 @@ class OnboardingScreen extends StatelessWidget {
               Text(
                 'One frame.\nEvery expression.',
                 style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  height: 1.03,
-                ),
+                      fontWeight: FontWeight.w500,
+                      height: 1.03,
+                    ),
               ),
               const SizedBox(height: 18),
               Text(

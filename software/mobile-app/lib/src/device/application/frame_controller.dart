@@ -9,7 +9,7 @@ import '../domain/frame_zone.dart';
 
 class FrameController extends ChangeNotifier {
   FrameController({required FrameTransport transport})
-    : _transport = transport {
+      : _transport = transport {
     _subscription = _transport.status.listen(_onStatus);
   }
 
@@ -48,15 +48,15 @@ class FrameController extends ChangeNotifier {
   Future<void> setColor(Color color) async {
     _appearance = switch (_selectedZone) {
       FrameZone.wholeFrame => _appearance.copyWith(
-        front: color,
-        leftTemple: color,
-        rightTemple: color,
-      ),
+          front: color,
+          leftTemple: color,
+          rightTemple: color,
+        ),
       FrameZone.front => _appearance.copyWith(front: color),
       FrameZone.temples => _appearance.copyWith(
-        leftTemple: color,
-        rightTemple: color,
-      ),
+          leftTemple: color,
+          rightTemple: color,
+        ),
     };
     await _send();
   }

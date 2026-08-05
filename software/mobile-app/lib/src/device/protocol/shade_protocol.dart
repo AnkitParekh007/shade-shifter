@@ -19,10 +19,10 @@ enum ShadeCommand {
   final int code;
 
   static ShadeCommand fromCode(int code) => values.firstWhere(
-    (value) => value.code == code,
-    orElse: () =>
-        throw FormatException('Unknown command 0x${code.toRadixString(16)}'),
-  );
+        (value) => value.code == code,
+        orElse: () => throw FormatException(
+            'Unknown command 0x${code.toRadixString(16)}'),
+      );
 }
 
 class ShadePacket {
@@ -54,8 +54,7 @@ class ShadePacket {
 
 abstract final class ShadePacketCodec {
   static Uint8List encode(ShadePacket packet) {
-    final length =
-        ShadeProtocol.headerLength +
+    final length = ShadeProtocol.headerLength +
         packet.payload.length +
         ShadeProtocol.checksumLength;
     final bytes = Uint8List(length);
@@ -97,8 +96,7 @@ abstract final class ShadePacketCodec {
     }
     final data = ByteData.sublistView(bytes);
     final payloadLength = data.getUint16(6, Endian.little);
-    final expectedLength =
-        ShadeProtocol.headerLength +
+    final expectedLength = ShadeProtocol.headerLength +
         payloadLength +
         ShadeProtocol.checksumLength;
     if (bytes.length != expectedLength) {

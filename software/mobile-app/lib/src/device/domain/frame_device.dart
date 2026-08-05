@@ -11,12 +11,12 @@ class FrameDeviceStatus {
   });
 
   const FrameDeviceStatus.disconnected()
-    : connection = FrameConnectionState.disconnected,
-      batteryPercent = 0,
-      temperatureCelsius = 0,
-      firmwareVersion = 'Unknown',
-      simulator = true,
-      lastAcknowledgedSequence = 0;
+      : connection = FrameConnectionState.disconnected,
+        batteryPercent = 0,
+        temperatureCelsius = 0,
+        firmwareVersion = 'Unknown',
+        simulator = true,
+        lastAcknowledgedSequence = 0;
 
   final FrameConnectionState connection;
   final int batteryPercent;

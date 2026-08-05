@@ -9,10 +9,10 @@ abstract final class ShadeTheme {
       _theme(brightness: Brightness.light, surface: _ivory, foreground: _ink);
 
   static ThemeData get dark => _theme(
-    brightness: Brightness.dark,
-    surface: const Color(0xFF15171C),
-    foreground: const Color(0xFFF4F0E8),
-  );
+        brightness: Brightness.dark,
+        surface: const Color(0xFF15171C),
+        foreground: const Color(0xFFF4F0E8),
+      );
 
   static ThemeData _theme({
     required Brightness brightness,
@@ -30,9 +30,9 @@ abstract final class ShadeTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: surface,
       textTheme: Typography.material2021().black.apply(
-        bodyColor: foreground,
-        displayColor: foreground,
-      ),
+            bodyColor: foreground,
+            displayColor: foreground,
+          ),
       sliderTheme: SliderThemeData(
         activeTrackColor: _champagne,
         thumbColor: _champagne,
