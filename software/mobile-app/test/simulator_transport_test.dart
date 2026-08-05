@@ -9,8 +9,8 @@ void main() {
     final capabilities = <DeviceCapabilities>[];
     final a = transport.status.listen(statuses.add);
     final b = transport.capabilities.listen(capabilities.add);
-    final connected = transport.status.firstWhere(
-        (value) => value.phase == ConnectionPhase.connected);
+    final connected = transport.status
+        .firstWhere((value) => value.phase == ConnectionPhase.connected);
     await transport.connect();
     await connected;
     expect(statuses.last.phase, ConnectionPhase.connected);
