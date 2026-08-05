@@ -2,9 +2,9 @@
 
 # Shade Shifter
 
-### Your frame. Your palette.
+### One frame. Every version of you.
 
-A simulator-first smart-eyewear platform for exploring app-controlled frame colors, zones, looks, and safe Bluetooth hardware control.
+App-controlled eyewear that changes frame color on demand—from a quiet neutral to a vivid gradient in seconds.
 
 [![Mobile app](https://github.com/AnkitParekh007/shade-shifter/actions/workflows/mobile-app.yml/badge.svg)](https://github.com/AnkitParekh007/shade-shifter/actions/workflows/mobile-app.yml)
 [![Flutter](https://img.shields.io/badge/Flutter-Android%20%7C%20iOS-02569B?logo=flutter)](software/mobile-app)
@@ -14,24 +14,35 @@ A simulator-first smart-eyewear platform for exploring app-controlled frame colo
 
 </div>
 
-![Shade Shifter Android app design preview](documentation/images/shade-shifter-android-showcase.png)
+![Shade Shifter Android app concept showing onboarding, color customization, launch looks, and device status](documentation/images/shade-shifter-android-showcase-v2.png)
 
 > The image above is a design preview of the implemented Android experience, not a photograph of production hardware.
 
 ## What is Shade Shifter?
 
-Shade Shifter is an open prototype for eyewear whose visible appearance can be controlled from a phone. The project combines a premium Flutter companion app, an ESP32 Bluetooth proof of concept, addressable RGB lighting, early CAD, purchasing research, and a gated wearable-hardware build plan.
+Shade Shifter is building a new eyewear category: a premium, prescription-compatible frame whose appearance changes digitally—without clips, shells, or a drawer full of glasses. The project combines a Flutter companion app, an ESP32 Bluetooth experience proof of concept, addressable RGB lighting, early CAD, purchasing research, and a gated wearable-hardware build plan.
 
-The current goal is to answer the difficult questions early: Can a phone control the frame reliably? Can separate frame areas feel expressive rather than gimmicky? Can the electronics remain cool, diffused, comfortable, and safe enough to justify a later wearable revision?
+People change clothes, shoes, and watch faces to match the moment; eyewear has remained visually fixed. The current goal is to prove that a phone-controlled frame can become a convincing canvas while remaining reliable, cool, diffused, comfortable, and honest about the work still required for daily wear.
+
+## Product vision
+
+The roadmap deliberately separates the customer experience from the hardest material-science question.
+
+| Track | Purpose |
+|---|---|
+| **Experience POC — RGB + light guide** | Prove fast, dramatic app control, Bluetooth reliability, thermal limits, fit, and customer desirability |
+| **Product R&D — reflective color surface** | Pursue a sunlight-visible, low-power, premium material expression suitable for everyday eyewear |
+
+The intended progression is **bench proof → wearable alpha → material breakthrough → India-first launch exploration**. Targets such as production weight, battery life, prescription compatibility, and launch colors remain goals until validated by engineering and testing.
 
 ## Android app experience
 
-The Flutter app works without hardware from the first launch. Choose **Try simulator** to explore the complete product flow, then use **Pair physical frame** when an ESP32 Rev A bench device is available.
+The Flutter app works without hardware from the first launch. Choose **Try simulator** to explore the complete product flow, then use **Pair physical frame** when an ESP32 Rev A bench device is available. The experience is designed around a simple rhythm: **choose, shift, wear**.
 
 | Experience | What it provides |
 |---|---|
 | **Customize** | Whole-frame or front/left/right zone selection, curated colors, hex input, linked zones, safe intensity, undo/redo, immediate preview, and off control |
-| **Looks** | Curated styles plus locally saved, duplicated, applied, and deleted personal looks |
+| **Looks** | Curated concepts such as Ultraviolet, Solar Flare, Deep Current, Liquid Metal, and Electric Lime, plus locally saved personal looks |
 | **Device** | Connection state, protocol profile, battery, temperature, signal, last command, safety state, disconnect, and off |
 | **Settings** | Accessibility, privacy, diagnostics, simulator guidance, safety information, and onboarding reset |
 
