@@ -46,13 +46,13 @@ void main() {
   });
 
   test('unsupported effect falls back to static', () {
-    final noEffects = DeviceCapabilities(
+    const noEffects = DeviceCapabilities(
       protocolVersion: 1,
       capabilityVersion: 1,
       hardwareRevision: 'Rev-A',
-      zones: const [ZoneId.front],
+      zones: [ZoneId.front],
       supportsGradient: false,
-      supportedEffects: const [EffectType.static],
+      supportedEffects: [EffectType.static],
       supportsWarmCool: false,
       supportsFindMyFrame: false,
       maxIntensity: 0.8,
@@ -60,8 +60,8 @@ void main() {
       thermalWarningCelsius: 45,
       thermalShutdownCelsius: 55,
     );
-    final appearance = FrameAppearance({
-      ZoneId.front: const ZoneAppearance(effect: EffectType.breathing),
+    const appearance = FrameAppearance({
+      ZoneId.front: ZoneAppearance(effect: EffectType.breathing),
     });
     final decision =
         governor.sanitize(appearance, noEffects, const DeviceTelemetry());
