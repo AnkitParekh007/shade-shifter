@@ -15,6 +15,5 @@ linter:
     prefer_final_locals: true
     always_declare_return_types: true
     avoid_print: true
-    require_trailing_commas: true
     unawaited_futures: true
     directives_ordering: true

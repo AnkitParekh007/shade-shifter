@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shade_shifter/core/ble/command_codec.dart';
 import 'package:shade_shifter/core/ble/protocol.dart';
+import 'package:shade_shifter/shared/models/appearance.dart';
 import 'package:shade_shifter/shared/models/rgb_color.dart';
 import 'package:shade_shifter/shared/models/zone.dart';
 
