@@ -240,14 +240,12 @@ class _SolidControls extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const SectionHeader('Color'),
-            const Spacer(),
-            Text(current.solidColor.hex,
-                style: const TextStyle(
-                    letterSpacing: 1, color: ShadeTokens.fog)),
-          ],
+        SectionHeader(
+          'Color',
+          trailing: Text(
+            current.solidColor.hex,
+            style: const TextStyle(letterSpacing: 1, color: ShadeTokens.fog),
+          ),
         ),
         _SwatchGrid(
           selected: current.solidColor,
