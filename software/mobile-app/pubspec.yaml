@@ -1,0 +1,45 @@
+name: shade_shifter
+description: Shade Shifter — premium customizable BLE eyewear companion app.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management + DI
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # Persistence
+  shared_preferences: ^2.2.3
+  flutter_secure_storage: ^9.2.2
+
+  # BLE (physical transport only; isolated behind DeviceTransport interface)
+  flutter_blue_plus: ^1.32.7
+  permission_handler: ^11.3.1
+
+  # Utilities
+  collection: ^1.18.0
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
+  # Asset directories exist under assets/ but are intentionally NOT declared yet:
+  # the frame preview is drawn in code, so there are no bundled assets in the POC.
+  # Re-add an `assets:` block here when a GLB model / fonts / images are added.
+  # See documentation/mobile-app/ARCHITECTURE.md ("3D preview") + UX-FLOWS.md.

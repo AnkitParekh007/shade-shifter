@@ -1,0 +1,3 @@
+Placeholder so this directory is tracked by git.
+Drop the frame GLB here (materials: frame_front, temple_left, temple_right,
+lenses, hinges) when the real 3D preview lands. See ARCHITECTURE.md ("3D preview").
