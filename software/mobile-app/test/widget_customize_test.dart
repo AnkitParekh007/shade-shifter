@@ -18,9 +18,18 @@ Future<Widget> _harness() async {
   );
 }
 
+/// Give the test a tall surface so the whole studio (a lazily-built ListView)
+/// renders — otherwise controls below the fold are never built and can't be found.
+void _useTallSurface(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1080, 2600);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+}
+
 void main() {
   testWidgets('studio shows zone selector and responds to selection',
       (tester) async {
+    _useTallSurface(tester);
     await tester.pumpWidget(await _harness());
     await tester.pump();
 
@@ -41,6 +50,7 @@ void main() {
 
   testWidgets('tapping a swatch drives the apply-state machine',
       (tester) async {
+    _useTallSurface(tester);
     await tester.pumpWidget(await _harness());
     await tester.pump();
 
