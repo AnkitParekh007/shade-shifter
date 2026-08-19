@@ -1,10 +1,12 @@
 # Mobile App — Implementation Status
 
-_Last updated: 2026-08-17. This is the canonical, honest progress checklist.
+_Last updated: 2026-08-19. This is the canonical, honest progress checklist.
 "Done" means implemented **and** covered by an automated test or manually
 verifiable in the simulator. Build/analysis steps are **CI-verified** — the
-authoring machine has no Flutter SDK (see ADR 0003), so they are marked
-`CI-pending` until the first green run._
+authoring machine has no Flutter SDK (see ADR 0003)._
+
+**CI status (PR #13, run 32240793520): all green** — format/analyze/test (43
+tests), Android debug build, and iOS no-codesign build all pass on Flutter 3.29._
 
 ## Legend
 ✅ done · 🟡 partial · ⛔ not started · 🧪 CI-verified elsewhere
@@ -81,15 +83,16 @@ authoring machine has no Flutter SDK (see ADR 0003), so they are marked
 - ✅ Unit tests: color, codec (test vectors), safety, simulator, studio
   (independent zones), persistence, BLE contract.
 - ✅ Widget test (studio) + integration test (first-launch → simulator).
-- 🧪 `dart format` / `flutter analyze` / `flutter test` — CI-pending.
-- 🧪 Android debug build / iOS no-codesign build — CI-pending.
+- ✅ `flutter analyze` clean + `flutter test` (43 tests) green in CI.
+- ✅ Android debug build + iOS no-codesign build green in CI.
+- 🧪 `dart format` reports drift (non-blocking) — run `dart format .` to normalize.
 - 🟡 Accessibility: semantics labels, reduced-motion + text-scale honored;
   full audit pending. Performance audit pending. Physical-device tests pending.
 
 ## Acceptance criteria (§20) snapshot
 | # | Criterion | State |
 |---|-----------|-------|
-| 1 | Launches on Android/iOS | 🧪 CI-pending |
+| 1 | Launches on Android/iOS | 🟡 both builds green in CI; on-device launch untested |
 | 2 | Full simulator journey | ✅ |
 | 3 | Whole/front/temple selections unmistakable | ✅ |
 | 4 | Front & temple colors independent | ✅ (tested) |
@@ -102,9 +105,9 @@ authoring machine has no Flutter SDK (see ADR 0003), so they are marked
 | 11 | State reconciled after reconnect | 🟡 (reconnect path ✅; physical ⛔) |
 | 12 | Safety limits can't be exceeded from UI | ✅ (tested) |
 | 13 | Tests cover critical flows | ✅ |
-| 14 | Analysis passes | 🧪 CI-pending |
-| 15 | Android debug build | 🧪 CI-pending |
-| 16 | iOS no-codesign build | 🧪 CI-pending |
+| 14 | Analysis passes | ✅ CI-verified |
+| 15 | Android debug build | ✅ CI-verified |
+| 16 | iOS no-codesign build | ✅ CI-verified |
 | 17 | Docs exist & match | ✅ |
 | 18 | No secrets committed | ✅ |
 | 19 | Buildable from README alone | ✅ |
