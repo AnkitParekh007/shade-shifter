@@ -10,6 +10,9 @@ low-power color-changing materials.
 ```
 software/mobile-app/        Flutter app (Android + iOS) — simulator-first
 documentation/mobile-app/   Product, architecture, BLE protocol, setup, ADRs
+hardware/                   Parts, suppliers, CAD/build blueprint, firmware, BOM
+pitch/                      Investor presentation material
+purchasing/                 Procurement checklists and buying guidance
 .github/workflows/          CI (format, analyze, test, Android/iOS builds)
 ```
 
