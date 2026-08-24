@@ -1,29 +1,141 @@
-# Shade Shifter BLE Protocol
+# Shade Shifter BLE Protocol — v1 (DRAFT)
 
-## Rev A legacy profile
+> **Status: DRAFT for joint agreement with firmware.** All UUIDs are
+> **development placeholders** (`lib/core/ble/ble_ids.dart`) and MUST be
+> confirmed with the firmware team before any production build. Encoding is
+> versioned; unknown versions are rejected via negotiation.
 
-- Advertised name: `ShadeShifter-POC`
-- Service: `7f4a0001-9d45-4d9e-b890-9f132c08a001`
-- Read/write color characteristic: `7f4a0002-9d45-4d9e-b890-9f132c08a001`
-- Write payload: exactly `[red, green, blue]`, three unsigned bytes from 0–255.
-- A write applies one solid color to every LED. There are no zones, brightness, effects, telemetry, capability response, or acknowledgement.
-- The firmware limits output to 32/255. The app cannot raise or replace that ceiling.
+## Design choices
+- **Compact binary** on the wire (not JSON). Fixed-size header + small payloads
+  keep within a single BLE MTU and are cheap to parse on the ESP32. JSON is used
+  only for simulator/debug logging.
+- **Big-endian** multi-byte integers.
+- **Idempotent commands** — every command sets absolute state, so a retry after a
+  lost ack is safe.
+- Authoritative implementation: `lib/core/ble/command_codec.dart` +
+  `protocol.dart`. Test vectors: `test/command_codec_test.dart`.
 
-## Packet profile v1
+## GATT services / characteristics (placeholder UUIDs)
+Vendor 128-bit base, prefix `0x5348534F` ("SHSO").
 
-All multi-byte values are little-endian. Maximum packet length is 96 bytes.
+| Role | Characteristic | Props | UUID (dev) |
+|------|----------------|-------|------------|
+| Device information | `charDeviceInfo` | Read | `…-0002-…` |
+| Capabilities | `charCapabilities` | Read | `…-0003-…` |
+| Command write | `charCommandWrite` | Write | `…-0004-…` |
+| Command ack | `charCommandAck` | Notify | `…-0005-…` |
+| Current state | `charCurrentState` | Read/Notify | `…-0006-…` |
+| Telemetry | `charTelemetry` | Notify | `…-0007-…` |
+| Firmware update | `charFirmwareUpdate` | Write | `…-0008-…` (placeholder) |
 
-| Offset | Size | Field |
-|---:|---:|---|
-| 0 | 1 | Magic `0x53` |
-| 1 | 1 | Version `0x01` |
-| 2 | 2 | Sequence |
-| 4 | 1 | Command |
-| 5 | 1 | Flags |
-| 6 | 2 | Payload length |
-| 8 | N | Payload |
-| 8+N | 2 | CRC16/Modbus over all preceding bytes |
+Service UUID `5348534f-0001-4000-8000-536861646572`. Devices advertise a name
+beginning `ShadeShifter` (`BleIds.deviceNamePrefix`).
 
-Commands: `0x10` set appearance, `0x20` request status, `0x21` status, `0x7E` acknowledgement, `0x7F` error. Unknown commands, versions, lengths, or CRCs are rejected. Sequence numbers wrap at 65535. A command retry reuses its sequence so firmware can treat it idempotently. Writes time out after eight seconds; connect/discovery after twelve seconds. Retry only transient transport failures, at most twice with 250/500 ms backoff.
+## Command frame layout
 
-Example request-status packet before CRC: `53 01 01 00 20 00 00 00`. Capability discovery is required before packet-v1 controls are enabled. If discovery is absent and the Rev A color characteristic exists, the app explicitly selects the legacy profile.
+```
+offset size field
+  0     1    protocolVersion
+  1     1    messageType   (CommandType.wire)
+  2     2    commandId     (uint16, correlates ack)
+  4     4    sequence      (uint32, monotonic)
+  8     1    targetZone    (ZoneId.wire; 0x00 = n/a)
+  9     1    payloadLength (L; ≤ 512)
+ 10     L    payload
+10+L    1    checksum      (XOR of bytes 0..10+L-1)
+```
+
+### Message types (`messageType`)
+| Cmd | Byte | Payload |
+|-----|------|---------|
+| handshake | `0x01` | `[protocolVersion]` |
+| readCapabilities | `0x02` | — |
+| readCurrentState | `0x03` | — |
+| setZoneSolidColor | `0x10` | `R,G,B,intensity` (4 B) |
+| setZoneGradient | `0x11` | `Rs,Gs,Bs,Re,Ge,Be,dir,intensity` (8 B) |
+| setZoneIntensity | `0x12` | `intensity` (1 B) |
+| setEffect | `0x13` | `effect,speed` (2 B) |
+| applyLook | `0x14` | `count, {zone,mode,R,G,B,effect,intensity}×count` |
+| illuminationOff | `0x1F` | — |
+| renameDevice | `0x20` | `len, utf8[len≤30]` |
+| ping | `0x30` | — |
+| enterFirmwareUpdate | `0x40` | (placeholder) |
+
+- **Color**: three 8-bit channels R,G,B. Intensity is a **separate** byte
+  (`round(unit×255)`), never premultiplied into the channels.
+- **Zone ids**: front `0x01`, leftTemple `0x02`, rightTemple `0x03`.
+- **Effect ids**: static `0x00`, gentlePulse `0x01`, colorShift `0x02`,
+  breathing `0x03`.
+
+### Test vector — `setZoneSolidColor`, front, `#7C5CFF`, intensity 0.6
+`commandId=1, sequence=1` →
+`01 10 00 01 00 00 00 01 01 04 7C 5C FF 99 52`
+(checksum `0x52`). Verified in `test/command_codec_test.dart`.
+
+## Acknowledgement
+Notification on `charCommandAck`, correlated by `commandId`. Status codes:
+
+| Status | Byte |
+|--------|------|
+| ok | `0x00` |
+| rejectedUnsafe | `0x01` |
+| rejectedUnsupported | `0x02` |
+| malformed | `0x03` |
+| busy | `0x04` |
+| protocolMismatch | `0x05` |
+
+## Timeouts, retries, idempotency
+- Client command timeout: **3 s** (`DeviceController._commandTimeout`).
+- Retries: up to **2**, only for transient failures (`commandTimeout`, `busy`),
+  with backoff `150ms × attempt`. Safe because commands are idempotent.
+- Continuous UI controls are **debounced 120 ms** before transmit.
+
+## Fragmentation
+Payloads ≤ MTU are sent whole. `applyLook` and future large payloads that exceed
+the negotiated MTU are fragmented into `⌈L/mtu⌉` chunks with a continuation flag
+in a reserved header bit (to be finalized with firmware; not yet needed for
+Rev-A's ≤ 3 zones).
+
+## Version negotiation
+
+```mermaid
+sequenceDiagram
+  participant A as App
+  participant F as Frame
+  A->>F: connect + discover services
+  A->>F: read charCapabilities (protocolVersion)
+  alt version supported
+    A->>F: handshake(protocolVersion=1)
+    F-->>A: ack ok → session established
+  else mismatch
+    F-->>A: ack protocolMismatch
+    A->>A: surface AppErrorKind.protocolMismatch + recovery
+  end
+```
+
+## Unsupported command / capability
+A device that receives an unknown `messageType` or an unsupported feature
+replies `rejectedUnsupported`. The app never sends a feature absent from the
+capability response; it renders such features as "Not supported".
+
+## Command / ack flow
+
+```mermaid
+sequenceDiagram
+  participant App
+  participant Frame
+  App->>Frame: write command (commandId=N, checksum)
+  Frame->>Frame: verify checksum + validate payload
+  alt valid
+    Frame->>Frame: apply, clamp to safety limits
+    Frame-->>App: ack(commandId=N, ok, [state])
+  else invalid
+    Frame-->>App: ack(commandId=N, malformed | rejected*)
+  end
+  Note over App: no ack within 3s → retry (idempotent) → timeout
+```
+
+## Security notes
+Pairing for the POC is unauthenticated. Production must add authenticated,
+replay-resistant control and signed firmware updates — see
+SECURITY-THREAT-MODEL.md for the gap analysis.

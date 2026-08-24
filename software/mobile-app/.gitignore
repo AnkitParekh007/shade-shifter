@@ -1,13 +1,38 @@
+# Dart / Flutter
 .dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
 .packages
+.pub-cache/
+.pub/
 build/
-coverage/
-android/.gradle/
-android/local.properties
-ios/Pods/
-ios/.symlinks/
-ios/Flutter/ephemeral/
-*.iml
+pubspec.lock
+
+# Generated platform shells (recreated by tool/bootstrap_platforms.sh).
+# Committing these causes churn; config lives in tool/platform/ + docs.
+/android/
+/ios/
+/linux/
+/macos/
+/windows/
+/web/
+
+# Generated code (we do not use build_runner; guard anyway).
+*.g.dart
+*.freezed.dart
+
+# IDE / OS
 .idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Secrets / signing — NEVER commit.
+*.jks
+*.keystore
+key.properties
+*.mobileprovision
+*.p12
+*.p8
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+.env
+.env.*

@@ -1,39 +1,45 @@
 name: shade_shifter
-description: Premium simulator-first controller for Shade Shifter eyewear.
-publish_to: none
+description: Shade Shifter — premium customizable BLE eyewear companion app.
+publish_to: "none"
 version: 0.1.0+1
 
 environment:
-  sdk: ">=3.6.0 <4.0.0"
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.22.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^3.0.3
-  go_router: ^17.0.1
-  freezed_annotation: ^3.1.0
-  json_annotation: ^4.9.0
-  flutter_blue_plus: ^1.36.8
-  drift: ^2.30.0
-  drift_flutter: ^0.3.0
-  shared_preferences: ^2.5.4
-  flutter_secure_storage: ^10.0.0
-  uuid: ^4.5.2
-  interactive_3d: ^2.2.0
-  permission_handler: ^12.0.1
-  package_info_plus: ^9.0.0
+
+  # State management + DI
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # Persistence
+  shared_preferences: ^2.2.3
+  flutter_secure_storage: ^9.2.2
+
+  # BLE (physical transport only; isolated behind DeviceTransport interface)
+  flutter_blue_plus: ^1.32.7
+  permission_handler: ^11.3.1
+
+  # Utilities
+  collection: ^1.18.0
+  meta: ^1.15.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
-  build_runner: ^2.10.4
-  freezed: ^3.2.3
-  json_serializable: ^6.11.2
-  drift_dev: ^2.30.0
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
   mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/models/
+  # Asset directories exist under assets/ but are intentionally NOT declared yet:
+  # the frame preview is drawn in code, so there are no bundled assets in the POC.
+  # Re-add an `assets:` block here when a GLB model / fonts / images are added.
+  # See documentation/mobile-app/ARCHITECTURE.md ("3D preview") + UX-FLOWS.md.
