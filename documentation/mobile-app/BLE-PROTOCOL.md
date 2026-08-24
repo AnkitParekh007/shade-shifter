@@ -1,9 +1,43 @@
-# Shade Shifter BLE Protocol — v1 (DRAFT)
+# Shade Shifter BLE Protocol
 
-> **Status: DRAFT for joint agreement with firmware.** All UUIDs are
-> **development placeholders** (`lib/core/ble/ble_ids.dart`) and MUST be
-> confirmed with the firmware team before any production build. Encoding is
-> versioned; unknown versions are rejected via negotiation.
+Two profiles exist, and the app is capability-driven so it only offers what the
+connected profile supports:
+
+1. **Rev-A legacy** — the contract the bench firmware ACTUALLY implements today.
+   Authoritative; matches real silicon.
+2. **Packet-v1** — a richer, versioned contract (below). PROPOSED, not yet in
+   any firmware; UUIDs are development placeholders to agree with firmware.
+
+---
+
+## Rev-A legacy contract (AUTHORITATIVE — as implemented)
+
+Source of truth: `hardware/blueprint-plan/firmware/shade_shifter_bench.ino`
+(NimBLE + Adafruit_NeoPixel, 24 WS2812B LEDs). App side:
+`DeviceCapabilities.revALegacy` + `BleIds.serviceRevA`/`charRevAColor`.
+
+| Item | Value |
+|------|-------|
+| Advertised name | `ShadeShifter-POC` (prefix `ShadeShifter`) |
+| Service UUID | `7f4a0001-9d45-4d9e-b890-9f132c08a001` |
+| Color characteristic | `7f4a0002-9d45-4d9e-b890-9f132c08a001` (READ \| WRITE) |
+| Payload | exactly **3 bytes: R, G, B** (whole frame). Any other length is ignored. |
+| Brightness | **fixed firmware-side at 32/255 (~12.5%)** — NOT in the payload, not app-adjustable |
+| Zones / gradient / effects | none — whole frame, one solid color |
+| Ack | none — Write, then optionally READ the color characteristic to confirm |
+| Telemetry / capabilities / firmware-update | none |
+
+Because there is no capability or ack characteristic, the app applies the
+`revALegacy` profile **statically** for a Rev-A device (no negotiation), degrades
+the UI to whole-frame solid color, and treats a successful write (optionally
+read-back verified) as "applied". Intensity/gradient/effect controls are hidden.
+
+> Reconcile before changing: any edit here must match the firmware, or the
+> firmware must change in the same PR.
+
+---
+
+## Packet-v1 (PROPOSED — richer versioned contract, not in firmware yet)
 
 ## Design choices
 - **Compact binary** on the wire (not JSON). Fixed-size header + small payloads
@@ -15,8 +49,9 @@
 - Authoritative implementation: `lib/core/ble/command_codec.dart` +
   `protocol.dart`. Test vectors: `test/command_codec_test.dart`.
 
-## GATT services / characteristics (placeholder UUIDs)
-Vendor 128-bit base, prefix `0x5348534F` ("SHSO").
+## GATT services / characteristics (packet-v1 placeholder UUIDs)
+Vendor 128-bit base, prefix `0x5348534F` ("SHSO"). Constant
+`BleIds.servicePacketV1`. These are NOT the Rev-A firmware UUIDs above.
 
 | Role | Characteristic | Props | UUID (dev) |
 |------|----------------|-------|------------|
@@ -28,8 +63,9 @@ Vendor 128-bit base, prefix `0x5348534F` ("SHSO").
 | Telemetry | `charTelemetry` | Notify | `…-0007-…` |
 | Firmware update | `charFirmwareUpdate` | Write | `…-0008-…` (placeholder) |
 
-Service UUID `5348534f-0001-4000-8000-536861646572`. Devices advertise a name
-beginning `ShadeShifter` (`BleIds.deviceNamePrefix`).
+Packet-v1 service UUID `5348534f-0001-4000-8000-536861646572`
+(`BleIds.servicePacketV1`). Devices advertise a name beginning `ShadeShifter`
+(`BleIds.deviceNamePrefix`) — the Rev-A firmware advertises `ShadeShifter-POC`.
 
 ## Command frame layout
 
