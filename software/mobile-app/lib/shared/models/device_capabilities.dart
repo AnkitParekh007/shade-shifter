@@ -83,7 +83,9 @@ class DeviceCapabilities {
             (json['thermalShutdownCelsius'] as num).toDouble(),
       );
 
-  /// Rev-A reference profile used by the simulator and as a conservative default.
+  /// Rich "experience" profile (packet-v1 target) used by the **simulator** and
+  /// as the conservative default when no device has negotiated yet. This is NOT
+  /// what the physical Rev-A bench frame supports today — see [revALegacy].
   static const DeviceCapabilities revA = DeviceCapabilities(
     protocolVersion: 1,
     capabilityVersion: 1,
@@ -102,5 +104,29 @@ class DeviceCapabilities {
     safeDefaultIntensity: 0.5,
     thermalWarningCelsius: 45,
     thermalShutdownCelsius: 55,
+  );
+
+  /// The contract the **physical Rev-A bench firmware actually implements**
+  /// (`hardware/blueprint-plan/firmware/shade_shifter_bench.ino`): one
+  /// whole-frame solid RGB color, no gradients/effects, and brightness fixed
+  /// firmware-side at 32/255 (~12.5%) — the app cannot raise it. There is no
+  /// capability/ack/telemetry characteristic, so the app applies this profile
+  /// statically for a Rev-A device rather than negotiating it.
+  ///
+  /// Whole-frame is modelled as the single [ZoneId.front] zone; the Rev-A BLE
+  /// transport maps that one color onto the whole frame.
+  static const DeviceCapabilities revALegacy = DeviceCapabilities(
+    protocolVersion: 0, // pre-versioned raw-RGB firmware
+    capabilityVersion: 0,
+    hardwareRevision: 'Rev-A (legacy)',
+    zones: [ZoneId.front],
+    supportsGradient: false,
+    supportedEffects: [EffectType.static],
+    supportsWarmCool: false,
+    supportsFindMyFrame: false,
+    maxIntensity: 0.125, // firmware-fixed 32/255; not app-adjustable
+    safeDefaultIntensity: 0.125,
+    thermalWarningCelsius: 38,
+    thermalShutdownCelsius: 40,
   );
 }
