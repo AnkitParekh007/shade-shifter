@@ -12,42 +12,88 @@ simulator to silicon.
   concrete, minimal BLE contract (see BLE-PROTOCOL.md "Rev-A legacy"). The app
   now models it as `DeviceCapabilities.revALegacy` +
   `BleIds.serviceRevA`/`charRevAColor`.
-- **`BleTransport` is not yet implemented** — deliberately kept out of the
-  compiled tree so CI stays green without a device/SDK (ADR 0003).
+- **`BleTransport` is implemented** (`lib/features/device/ble_transport.dart`)
+  and selected by `TransportFactory` for any non-simulator device. It has been
+  verified in CI (analyze, 25 unit tests, Android + iOS compile) but has **not
+  yet talked to a physical frame** — see the validation checklist below.
 
-## The next hardware task (single, concrete): Rev-A legacy transport
-Implement `lib/features/device/ble_transport.dart` as a `DeviceTransport` using
-`flutter_blue_plus`, targeting the **Rev-A legacy** contract first (raw 3-byte
-RGB — far simpler than packet-v1), then register it in
-`TransportFactory.createFor` for non-simulator devices. Steps:
+## How the Rev-A transport works
+Two seams, not one. `DeviceTransport` keeps UI and business logic away from BLE;
+a second, narrower `BleBackend` seam keeps the *protocol logic* away from the
+BLE package itself:
 
-1. **Permissions**: gate `scan()` behind `permission_handler` (Android 12+
-   scan/connect; iOS usage descriptions already applied by the bootstrap script).
-2. **Scan**: `FlutterBluePlus.startScan` filtered to `BleIds.serviceRevA` /
-   `ShadeShifter` name prefix (`ShadeShifter-POC`); map to `DeviceRef`; stop on
-   selection/timeout.
-3. **Connect + discover**: connect, discover `BleIds.serviceRevA` and its
-   `charRevAColor` characteristic. **No** capability/ack/telemetry chars exist.
-4. **Apply the static profile**: assign `DeviceCapabilities.revALegacy` (no
-   negotiation) so the UI degrades to whole-frame solid color.
-5. **Command path**: for a whole-frame solid color, write the **3 bytes R,G,B**
-   to `charRevAColor` (write, or write-with-response). There is no ack — treat a
-   successful write (optionally read-back verified against the characteristic) as
-   `CommandAck.ok`. Ignore intensity/gradient/effect (not supported).
-6. **Telemetry**: none on Rev-A → leave `DeviceTelemetry` fields null ("Not
-   supported"). Optionally poll `charRevAColor` READ for a liveness signal.
-7. **Lifecycle**: handle disconnect, backgrounding/resume, reconnect to the
-   secure-stored device; cancel every subscription in `dispose()`.
+| File | Role | Imports `flutter_blue_plus`? |
+|------|------|------|
+| `ble_transport.dart` | Rev-A semantics: command → bytes, lifecycle, errors | no — pure Dart, unit-tested |
+| `ble_backend.dart` | Narrow platform-BLE interface | no |
+| `flutter_blue_plus_backend.dart` | Permissions, scan, connect, read/write | **yes — the only one** |
 
-The `DeviceController` pipeline (timeout, bounded retry — retry the write on
-timeout, safe because it's idempotent) and the `SafetyGovernor` already sit above
-this — no changes needed there. Packet-v1 (negotiation, per-zone commands, acks,
-telemetry) is a later firmware milestone; keep it behind capability checks.
+That split exists because the native plugin cannot run on the dev machine or in
+`flutter test` (ADR 0003). Keeping the plugin surface to one thin adapter means
+everything worth testing runs in CI against `FakeBleBackend`, which imitates the
+bench firmware — including its rule that a payload of any length but 3 is
+silently ignored.
+
+What the transport does, given what the hardware lacks:
+
+1. **Permissions** — `ensureReady()` requests Android `BLUETOOTH_SCAN`/
+   `BLUETOOTH_CONNECT` (iOS: `Permission.bluetooth`) and checks the adapter is
+   on, only after an explicit user action. It never turns the radio on.
+2. **Scan** — filtered in the platform stack by `BleIds.serviceRevA`. iOS
+   requires a service filter to find a vendor peripheral, and the service UUID
+   is the field the Rev-A advertisement is most likely to carry: a 128-bit UUID
+   plus `ShadeShifter-POC` does not fit one 31-byte legacy advertising packet,
+   so the **name may arrive only in the scan response**. The name prefix is
+   therefore used for display, not for filtering.
+3. **Connect + discover** — verifies the peripheral really exposes
+   `serviceRevA`/`charRevAColor`, and fails with `unsupportedFirmware` (dropping
+   the link) if not.
+4. **Capabilities** — `DeviceCapabilities.revALegacy` applied **statically**.
+   Nothing is negotiated; there is no capability characteristic to read.
+5. **Commands** — everything collapses to a 3-byte R,G,B write:
+   - solid color → scaled RGB (see *Brightness* below)
+   - gradient → **midpoint blend**, not a rejection, because `SafetyGovernor`
+     already tells the user the frame "renders gradients as a solid blend"
+   - illumination-off → `00 00 00`, **verified by read-back**
+   - intensity-only → re-writes the last color at the new level
+   - static effect → no-op success; animated effect, temple zone, rename →
+     `rejectedUnsupported` (surfaced honestly, never faked)
+   - handshake / capability / state reads → answered locally, no BLE traffic
+6. **Brightness** — the firmware fixes global brightness at 32/255 and takes no
+   intensity byte, so **scaling the RGB channels is the only dimming lever the
+   app has**. Intensity is expressed as a fraction of the firmware ceiling: a
+   request at the ceiling writes full-scale channels (rendered at 12.5%), and
+   zero writes black. This deliberately differs from packet-v1, where intensity
+   is a separate byte and must never be premultiplied.
+7. **Acks** — none exist. A write-with-response (ATT-level confirmation) is
+   treated as `AckStatus.ok`. Safety-critical writes are additionally read back
+   and compared, which is meaningful because NimBLE stores the written value and
+   serves it on READ.
+8. **Telemetry** — link-layer RSSI only, polled every 10 s. Battery,
+   temperature and firmware version stay `null` so the UI shows "Not supported"
+   instead of inventing numbers.
+9. **Lifecycle** — an unexpected disconnect surfaces as `error` → `disconnected`;
+   every subscription and timer is cancelled in `dispose()`.
+
+The `DeviceController` pipeline (timeout, bounded retry — safe because commands
+are idempotent) and the `SafetyGovernor` sit above this unchanged. Packet-v1
+(negotiation, per-zone commands, acks, telemetry) is a later firmware milestone;
+it stays behind capability checks.
 
 ## Validation checklist against real firmware (Phase 7)
+Nothing below has been done — the transport is code-complete and CI-verified,
+but **no byte has reached a real frame**. Work top to bottom at the bench.
+
 - [x] Rev-A **UUIDs / payload confirmed** from `shade_shifter_bench.ino`
       (service `7f4a0001…`, color `7f4a0002…`, 3-byte RGB, 12.5% fixed).
 - [ ] Bench-verify a live write actually recolors the 24-LED strip.
+- [ ] **Confirm the frame is discoverable with a service-UUID scan filter.** If
+      NimBLE drops the 128-bit UUID from the advertisement rather than the name,
+      `scan()` finds nothing and must fall back to name-prefix matching.
+- [ ] Confirm READ returns the last written value (the read-back verification
+      used for illumination-off depends on it).
+- [ ] Sanity-check the RGB-scaling dim curve on real LEDs — WS2812B output is
+      not linear, so a gamma correction may be needed in `_scaled`.
 - [ ] Confirm packet-v1 UUIDs jointly with firmware once that milestone starts.
 - [ ] Verify byte order, payload sizes, checksum and status codes vs. firmware.
 - [ ] Record real BLE behaviour (MTU, notify cadence, ack latency).

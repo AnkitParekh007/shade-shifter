@@ -42,11 +42,23 @@ tests), Android debug build, and iOS no-codesign build all pass on Flutter 3.29.
 - ✅ Command/ack pipeline with client timeout + bounded retry (idempotent).
 - ✅ `FakeTransport` + BLE contract tests (handshake, unsupported version,
   dropped/duplicate ack, disconnect-during-apply).
-- 🟡 Capability negotiation modelled + simulated; physical negotiation pending.
-- ⛔ **`BleTransport` (flutter_blue_plus) not yet implemented** — deliberately
-  excluded from the compiled tree so CI stays green without hardware. This is
-  the **next hardware task** (see HARDWARE-INTEGRATION.md).
-- ⛔ Runtime permission flow (`permission_handler`) — scaffolded dependency only.
+- 🟡 Capability negotiation modelled + simulated. Rev-A has no capability
+  characteristic, so the physical transport applies `revALegacy` statically;
+  real negotiation arrives with packet-v1 firmware.
+- ✅ **`BleTransport` implemented** (`features/device/ble_transport.dart`) for
+  the Rev-A legacy contract, and wired into `TransportFactory` for physical
+  devices. Command → 3-byte RGB mapping, static capability profile, read-back
+  verification, unsupported-feature rejection and disconnect handling are
+  covered by `test/ble_transport_test.dart` (25 tests, no radio required).
+- ✅ `BleBackend` seam (`ble_backend.dart` + `flutter_blue_plus_backend.dart`):
+  `flutter_blue_plus`/`permission_handler` are imported in exactly one file, so
+  the protocol logic is testable and the un-runnable-locally surface is small.
+- ✅ Runtime permission flow (`permission_handler`) implemented in the backend's
+  `ensureReady()` (Android scan/connect, iOS bluetooth), gated behind an
+  explicit user action.
+- 🟡 **Not hardware-verified.** Everything above is verified by CI (analyze +
+  tests + Android/iOS compile). No byte has yet reached a real frame — see the
+  Phase 7 checklist in HARDWARE-INTEGRATION.md.
 
 ## Phase 4 — Customization studio 🟡
 - ✅ Solid: swatches, hue slider, hex display, shades row, intensity.
@@ -75,9 +87,14 @@ tests), Android debug build, and iOS no-codesign build all pass on Flutter 3.29.
 - ✅ Settings: theme, reduced motion, app brightness ceiling, privacy, forget.
 - ⛔ Reorder favourites (drag) — not implemented.
 
-## Phase 7 — Hardware integration ⛔
-- ⛔ Blocked on `BleTransport` + physical Rev-A unit. Protocol drafted and
-  simulator-validated; awaiting joint firmware UUID/behaviour confirmation.
+## Phase 7 — Hardware integration 🟡
+- ✅ Rev-A contract reconciled against real firmware (UUIDs, 3-byte payload,
+  fixed 12.5% brightness) and pinned by `rev_a_contract_test.dart`.
+- ✅ `BleTransport` implemented against that contract.
+- ⛔ **Bench validation not done** — no code in this repo has talked to a
+  physical frame yet. The open checklist lives in HARDWARE-INTEGRATION.md
+  ("Validation checklist against real firmware"); the first item is confirming
+  a live write actually recolors the 24-LED strip.
 
 ## Phase 8 — Quality & release readiness 🟡
 - ✅ Unit tests: color, codec (test vectors), safety, simulator, studio
