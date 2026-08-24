@@ -4,8 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router/app_router.dart';
 import '../../app/theme/design_tokens.dart';
+import '../../core/errors/app_error.dart';
+import '../../core/errors/error_presentation.dart';
+import '../../shared/models/device_state.dart';
 import '../../shared/widgets/ui_kit.dart';
 import '../device/device_controller.dart';
+import '../device/transport_factory.dart';
 import '../settings/settings_controller.dart';
 
 class PairingScreen extends ConsumerStatefulWidget {
@@ -37,14 +41,18 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
   }
 
   Future<void> _pairFrame() async {
-    // Physical BLE scanning/permissions land in Phase 3 (see
-    // IMPLEMENTATION-STATUS.md). Until then this routes users to the simulator
-    // rather than presenting a non-functional scan.
-    await showModalBottomSheet<void>(
+    // Live BLE scan. Bluetooth permission is requested here — on an explicit
+    // user action — and never at startup (see PRIVACY-NOTES.md).
+    final connected = await showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) => const _PairComingSoonSheet(),
+      builder: (context) => const _ScanSheet(),
     );
+    if (connected != true || !mounted) return;
+    await ref.read(settingsControllerProvider.notifier).completeOnboarding();
+    if (!mounted) return;
+    context.go(Routes.home);
   }
 
   @override
@@ -119,33 +127,179 @@ class _PairingScreenState extends ConsumerState<PairingScreen> {
   }
 }
 
-class _PairComingSoonSheet extends StatelessWidget {
-  const _PairComingSoonSheet();
+/// Live scan + connect. Pops `true` once a frame is connected.
+class _ScanSheet extends ConsumerStatefulWidget {
+  const _ScanSheet();
+
+  @override
+  ConsumerState<_ScanSheet> createState() => _ScanSheetState();
+}
+
+class _ScanSheetState extends ConsumerState<_ScanSheet> {
+  bool _scanning = false;
+  String? _connectingId;
+  List<DeviceRef> _devices = const [];
+  AppError? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // Scan as soon as the sheet opens — opening it *is* the user's consent.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scan());
+  }
+
+  Future<void> _scan() async {
+    setState(() {
+      _scanning = true;
+      _error = null;
+      _devices = const [];
+    });
+    final result =
+        await ref.read(deviceControllerProvider.notifier).scanForFrames();
+    if (!mounted) return;
+    setState(() {
+      _scanning = false;
+      _devices = result.valueOrNull ?? const [];
+      _error = result.errorOrNull;
+    });
+  }
+
+  Future<void> _connect(DeviceRef device) async {
+    setState(() {
+      _connectingId = device.id;
+      _error = null;
+    });
+    final result =
+        await ref.read(deviceControllerProvider.notifier).connect(device);
+    if (!mounted) return;
+    setState(() => _connectingId = null);
+    final error = result.errorOrNull;
+    if (error != null) {
+      setState(() => _error = error);
+      return;
+    }
+    Navigator.of(context).pop(true);
+  }
+
+  Future<void> _recover(ErrorPresentation presentation) async {
+    if (presentation.opensSettings) {
+      await ref.read(transportFactoryProvider).openSystemSettings();
+      return;
+    }
+    await _scan();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(ShadeTokens.space5),
+    final theme = Theme.of(context);
+    final error = _error;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          ShadeTokens.space5,
+          0,
+          ShadeTokens.space5,
+          ShadeTokens.space5,
+        ),
+        // Scrollable so a long result list (or a small screen) never overflows.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Nearby frames',
+                      style: theme.textTheme.titleLarge),
+                ),
+                if (_scanning)
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
+            ),
+            const SizedBox(height: ShadeTokens.space3),
+            Text(
+              _scanning
+                  ? 'Looking for frames in range…'
+                  : 'Make sure your frame is powered on and nearby.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: ShadeTokens.space4),
+            if (error != null) ...[
+              _ErrorNotice(
+                presentation: ErrorPresentation.of(error),
+                onAction: _recover,
+              ),
+              const SizedBox(height: ShadeTokens.space4),
+            ],
+            ..._devices.map(
+              (device) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.bluetooth_outlined,
+                    color: ShadeTokens.spectral),
+                title: Text(device.name),
+                subtitle: Text(device.rssi == null
+                    ? 'Signal unknown'
+                    : 'Signal ${device.rssi} dBm'),
+                trailing: _connectingId == device.id
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chevron_right),
+                onTap:
+                    _connectingId == null ? () => _connect(device) : null,
+              ),
+            ),
+            if (!_scanning && _devices.isEmpty && error == null) ...[
+              const Text('No frames found yet.'),
+              const SizedBox(height: ShadeTokens.space3),
+            ],
+            const SizedBox(height: ShadeTokens.space3),
+              OutlinedButton.icon(
+                onPressed: _scanning || _connectingId != null ? null : _scan,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Scan again'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A recoverable error with its one suggested next step.
+class _ErrorNotice extends StatelessWidget {
+  const _ErrorNotice({required this.presentation, required this.onAction});
+
+  final ErrorPresentation presentation;
+  final Future<void> Function(ErrorPresentation) onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = presentation.actionLabel;
+    return GlassCard(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Physical pairing',
-              style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: ShadeTokens.space3),
-          const Text(
-            'Live BLE scanning and permission handling arrive with the Phase 3 '
-            'transport. The full customization experience is available today '
-            'through the simulator, which mirrors real device behaviour.',
-          ),
-          const SizedBox(height: ShadeTokens.space5),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Got it'),
+          Text(presentation.message),
+          if (label != null) ...[
+            const SizedBox(height: ShadeTokens.space3),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.tonal(
+                onPressed: () => onAction(presentation),
+                child: Text(label),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

@@ -91,6 +91,23 @@ class DeviceController extends Notifier<DeviceSession> {
   Future<Result<DeviceCapabilities>> connectSimulator() =>
       connect(SimulatorReference.device);
 
+  /// Scans for physical frames, using a short-lived transport dedicated to
+  /// discovery — [connect] builds its own. Only ever called from an explicit
+  /// user action, which is also when Bluetooth permission is requested.
+  Future<Result<List<DeviceRef>>> scanForFrames({
+    Duration timeout = const Duration(seconds: 6),
+  }) async {
+    final transport = ref.read(transportFactoryProvider).createBle();
+    try {
+      final result = await transport.scan(timeout: timeout);
+      final error = result.errorOrNull;
+      if (error != null) _log.warning('Scan failed', data: error.code);
+      return result;
+    } finally {
+      await transport.dispose();
+    }
+  }
+
   /// Connects to any device, replacing any existing session.
   Future<Result<DeviceCapabilities>> connect(DeviceRef device) async {
     await _teardown();

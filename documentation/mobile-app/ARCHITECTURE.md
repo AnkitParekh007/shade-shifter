@@ -27,7 +27,8 @@ flowchart TB
   subgraph Infrastructure
     SIM[SimulatorTransport]
     FAKE[FakeTransport - tests]
-    BLE[BleTransport - Phase 3]
+    BLE[BleTransport - Rev-A]
+    BACKEND[BleBackend -> flutter_blue_plus]
     CODEC[CommandCodec]
     PREFS[(shared_preferences)]
     SEC[(secure_storage)]
@@ -37,6 +38,7 @@ flowchart TB
   SC --> DC & SAFE & M
   DC --> T & CMD
   T -. implements .- SIM & FAKE & BLE
+  BLE --> BACKEND
   BLE --> CODEC
   LC --> PREFS
   DC --> SEC
@@ -48,12 +50,18 @@ flowchart TB
 flowchart LR
   APP[App code<br/>DeviceController.send] --> IF{{DeviceTransport}}
   IF -->|simulator id| SIM[SimulatorTransport<br/>latency · acks · telemetry · faults]
-  IF -->|physical id| BLE[BleTransport<br/>flutter_blue_plus]
+  IF -->|physical id| BLE[BleTransport<br/>Rev-A legacy semantics]
   IF -->|tests| FAKE[FakeTransport<br/>scripted scenarios]
+  BLE --> BE{{BleBackend}}
+  BE -->|device| FBP[FlutterBluePlusBackend<br/>the only flutter_blue_plus import]
+  BE -->|tests| FBE[FakeBleBackend<br/>imitates the bench firmware]
 ```
 
 `TransportFactory.createFor(DeviceRef)` selects the implementation. Nothing above
 the factory branches on transport type.
+
+The second seam (`BleBackend`) exists so the Rev-A protocol logic can be tested
+without a radio or a native plugin — see ADR 0005.
 
 ## Frame state synchronization
 

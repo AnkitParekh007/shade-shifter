@@ -52,8 +52,15 @@ Handled error states (each with a recovery action): Bluetooth disabled,
 permission denied, permanently denied (→ open settings), Android location
 requirement, no devices found (→ retry), unsupported firmware, protocol mismatch,
 connection timeout (→ retry), device busy elsewhere, unexpected disconnect.
-_POC note: physical scanning is the Phase 3 `BleTransport`; today "Pair a frame"
-explains this and routes to the simulator, which mirrors these states._
+"Pair a frame" now runs a **live BLE scan** through `BleTransport`: it requests
+Bluetooth permission at that moment (never at startup), lists frames with their
+signal, and connects on tap. Each error above maps to one sentence and one
+recovery action via `ErrorPresentation`; a permanently-denied permission offers
+"Open settings" instead of a retry. "Try the simulator" remains the no-hardware
+path and mirrors the same states.
+
+_POC note: the scan path is verified in CI against a firmware-shaped fake, not
+yet against a physical frame — see HARDWARE-INTEGRATION.md._
 
 ## Reconnection flow
 

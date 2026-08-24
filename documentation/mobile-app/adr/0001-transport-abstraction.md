@@ -10,9 +10,13 @@ platform-specific and awkward to test.
 
 ## Decision
 All device I/O goes through `core/ble/device_transport.dart` (`DeviceTransport`).
-Concrete implementations — `SimulatorTransport`, `FakeTransport` (tests) and the
-future `BleTransport` (`flutter_blue_plus`) — are interchangeable and selected by
+Concrete implementations — `SimulatorTransport`, `FakeTransport` (tests) and
+`BleTransport` (physical Rev-A) — are interchangeable and selected by
 `TransportFactory`. UI, controllers and models never import a BLE package.
+
+`BleTransport` itself does not import one either: it sits on the narrower
+`BleBackend` seam added in ADR 0005, which is what makes the physical protocol
+logic unit-testable.
 
 ## Consequences
 - Simulator-first development and deterministic tests (acceptance #8).

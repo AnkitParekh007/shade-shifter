@@ -28,8 +28,9 @@ namespace stays as generated).
   (`maxSdkVersion=30`) — required by the platform for BLE scanning on old APIs.
 - `uses-feature android.hardware.bluetooth_le` (required).
 
-Runtime requests are made **contextually at pairing**, never on launch
-(`permission_handler`, Phase 3).
+Runtime requests are made **contextually at pairing**, never on launch —
+implemented in `FlutterBluePlusBackend.ensureReady()` (`permission_handler`) and
+triggered only when the user opens the scan sheet.
 
 ## Build & run
 ```bash
@@ -48,5 +49,8 @@ if release stripping is observed to break reflection.
 ## Physical-device testing
 1. Enable Developer options + USB debugging, connect device.
 2. `flutter devices` → confirm it appears.
-3. `flutter run` → **Pair a frame** (Phase 3 transport) or **Try the simulator**.
+3. `flutter run` → **Pair a frame** (live BLE scan) or **Try the simulator**.
 4. Verify BLE permission prompts appear only when pairing.
+5. With a Rev-A frame powered on, confirm it appears in the scan sheet and that
+   connecting applies the whole-frame color — the first unchecked item in
+   HARDWARE-INTEGRATION.md's validation checklist.

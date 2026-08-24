@@ -30,7 +30,33 @@ Source of truth: `hardware/blueprint-plan/firmware/shade_shifter_bench.ino`
 Because there is no capability or ack characteristic, the app applies the
 `revALegacy` profile **statically** for a Rev-A device (no negotiation), degrades
 the UI to whole-frame solid color, and treats a successful write (optionally
-read-back verified) as "applied". Intensity/gradient/effect controls are hidden.
+read-back verified) as "applied".
+
+### Brightness on Rev-A: premultiplied, unlike packet-v1
+
+Rev-A's global brightness is fixed in firmware and the payload carries no
+intensity byte, so **scaling the three colour channels is the only way the app
+can dim the frame**. `BleTransport` therefore expresses intensity as a fraction
+of the firmware ceiling and premultiplies it into R,G,B:
+
+```
+scale   = clamp(intensity / caps.maxIntensity, 0, 1)   // maxIntensity = 32/255
+channel = round(channel × scale)
+```
+
+So a request at the ceiling writes full-scale channels (which the frame renders
+at its fixed 12.5 %), half the ceiling writes half-scale channels, and zero
+writes `00 00 00` — genuinely dark rather than "dark in the UI only". The app
+can never exceed the firmware cap, because `scale` is clamped to 1.
+
+> This is the **opposite** of the packet-v1 rule below, where intensity is a
+> separate byte and must never be premultiplied. The two profiles differ because
+> packet-v1 firmware applies intensity itself; Rev-A cannot.
+
+Gradients are written as the midpoint blend of start and end rather than
+rejected, matching the `SafetyGovernor` notice that the frame "renders gradients
+as a solid blend". Animated effects, temple zones and rename are refused with
+`rejectedUnsupported` — the app never pretends to apply what the frame cannot do.
 
 > Reconcile before changing: any edit here must match the firmware, or the
 > firmware must change in the same PR.
